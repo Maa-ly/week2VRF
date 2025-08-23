@@ -18,11 +18,17 @@ export interface LotteryState {
 export const LotteryGame: React.FC = () => {
   const { address, isConnected } = useAccount();
   
+  // Check if contract is properly configured
+  const isContractConfigured = CONTRACT_ADDRESS && CONTRACT_ADDRESS !== '0x0000000000000000000000000000000000000000';
+  
   // Contract read functions
   const { data: currentGameId } = useReadContract({
     address: CONTRACT_ADDRESS as `0x${string}`,
     abi: CONTRACT_ABI,
     functionName: 'currentGameId',
+    query: {
+      enabled: isContractConfigured,
+    },
   });
 
   const { data: currentGame } = useReadContract({
@@ -31,7 +37,7 @@ export const LotteryGame: React.FC = () => {
     functionName: 'getGame',
     args: currentGameId ? [currentGameId] : undefined,
     query: {
-      enabled: !!currentGameId && currentGameId > BigInt(0),
+      enabled: !!currentGameId && currentGameId > BigInt(0) && isContractConfigured,
     },
   });
 
@@ -130,6 +136,11 @@ export const LotteryGame: React.FC = () => {
   const startNewGame = async () => {
     if (!isConnected) {
       alert('Please connect your wallet first!');
+      return;
+    }
+
+    if (!isContractConfigured) {
+      alert('Contract not configured! Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS in your environment variables.');
       return;
     }
 
@@ -249,6 +260,25 @@ export const LotteryGame: React.FC = () => {
         <div className="text-center text-white">
           <h1 className="text-4xl font-bold mb-4">🎰 Lottery Game</h1>
           <p className="text-xl">Please connect your wallet to play!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isContractConfigured) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h1 className="text-4xl font-bold mb-4">🎰 Lottery Game</h1>
+          <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-6 max-w-md">
+            <p className="text-xl mb-4">⚠️ Contract Not Configured</p>
+            <p className="text-sm text-red-200 mb-4">
+              Please set NEXT_PUBLIC_LOTTERY_CONTRACT_ADDRESS in your environment variables.
+            </p>
+            <p className="text-xs text-gray-300">
+              Current address: {CONTRACT_ADDRESS}
+            </p>
+          </div>
         </div>
       </div>
     );
