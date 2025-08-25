@@ -56,6 +56,43 @@ A fully functional lottery game built with Next.js, React, Tailwind CSS, and Sol
 - **Emergency Functions**: Owner can pause games and withdraw funds
 - **Randomness**: Uses Chainlink VRF for provably fair results
 
+## Library Integrations
+
+### Randomness Library (`randomness-solidity`)
+The lottery contract integrates with the `randomness-solidity` library to provide secure, verifiable random number generation:
+
+- **Inheritance**: Contract extends `RandomnessReceiverBase` for VRF functionality
+- **Randomness Callback**: Implements `onRandomnessReceived()` to handle VRF responses
+- **Subscription Management**: Uses subscription-based randomness requests for cost efficiency
+- **Fair Play**: Ensures all winning numbers are generated using blockchain-verified randomness
+- **Integration Points**:
+  - Constructor accepts `randomnessSender` address for VRF coordination
+  - `endGame()` function triggers randomness request via `_requestRandomnessWithSubscription()`
+  - Winning numbers are generated in `onRandomnessReceived()` callback
+
+### Blocklock Library (`blocklock-solidity`)
+The lottery contract integrates with the `blocklock-solidity` library to provide conditional encryption and delayed reveals:
+
+- **Inheritance**: Contract extends `AbstractBlocklockReceiver` for encryption functionality
+- **Sealed Games**: Implements time-based sealing of winning numbers for suspense and anti-front-running
+- **Conditional Encryption**: Uses Blocklock's conditional encryption system for secure data handling
+- **Delayed Reveals**: Winning numbers are encrypted and revealed after a time delay (1 hour)
+- **Integration Points**:
+  - Constructor accepts `blocklockSender` address for encryption coordination
+  - `_sealWinningNumbers()` function encrypts winning numbers using Blocklock
+  - `_onBlocklockReceived()` callback handles decryption when conditions are met
+  - Sealed games use `SEALED` phase between `DRAWING` and `FINISHED`
+  - Emergency reveal functions provide fallback if Blocklock fails
+
+### Combined Workflow
+1. **Game Creation**: Owner creates lottery game with duration and ticket limits
+2. **Ticket Sales**: Players purchase tickets during `ACTIVE` phase
+3. **Game Ending**: Owner ends game, triggering VRF randomness request
+4. **Number Generation**: VRF callback generates winning numbers
+5. **Sealing**: Numbers are encrypted and sealed using Blocklock for 1-hour delay
+6. **Reveal**: After time delay, numbers are decrypted and game moves to `FINISHED` phase
+7. **Prize Claims**: Players can claim prizes based on number matches
+
 ## Components
 
 - `LotteryGame`: Main game controller and state management
